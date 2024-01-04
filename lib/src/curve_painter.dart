@@ -2,6 +2,7 @@ part of circular_slider;
 
 class _CurvePainter extends CustomPainter {
   final double angle;
+  final double secondAngle;
   final CircularSliderAppearance appearance;
   final double startAngle;
   final double angleRange;
@@ -10,11 +11,17 @@ class _CurvePainter extends CustomPainter {
   Offset? center;
   late double radius;
 
-  _CurvePainter(
-      {required this.appearance, this.angle = 30, required this.startAngle, required this.angleRange});
+  _CurvePainter({
+    required this.appearance,
+    this.angle = 30,
+    required this.startAngle,
+    required this.angleRange,
+    required this.secondAngle,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
+    print(secondAngle);
     radius = math.min(size.width / 2, size.height / 2) -
         appearance.progressBarWidth * 0.5;
     center = Offset(size.width / 2, size.height / 2);
@@ -42,6 +49,7 @@ class _CurvePainter extends CustomPainter {
         ..color = appearance.trackColor;
     }
     drawCircularArc(
+        angle: angle,
         canvas: canvas,
         size: size,
         paint: trackPaint,
@@ -53,6 +61,8 @@ class _CurvePainter extends CustomPainter {
     }
 
     final currentAngle = appearance.counterClockwise ? -angle : angle;
+    final currentSecondAngle =
+        appearance.counterClockwise ? -secondAngle : secondAngle;
     final dynamicGradient = appearance.dynamicGradient;
     final gradientRotationAngle = dynamicGradient
         ? appearance.counterClockwise
@@ -72,9 +82,25 @@ class _CurvePainter extends CustomPainter {
             ? 360.0
             : currentAngle.abs()
         : appearance.gradientStopAngle;
+
+    final secondGradientStartAngle = dynamicGradient
+        ? appearance.counterClockwise
+            ? 360.0 - currentSecondAngle.abs()
+            : 0.0
+        : appearance.gradientStartAngle;
+    final secondGradientEndAngle = dynamicGradient
+        ? appearance.counterClockwise
+            ? 360.0
+            : currentSecondAngle.abs()
+        : appearance.gradientStopAngle;
+
     final colors = dynamicGradient && appearance.counterClockwise
         ? appearance.progressBarColors.reversed.toList()
         : appearance.progressBarColors;
+
+    final secondColors = dynamicGradient && appearance.counterClockwise
+        ? appearance.secondProgressBarColors.reversed.toList()
+        : appearance.secondProgressBarColors;
 
     final progressBarGradient = kIsWeb
         ? LinearGradient(
@@ -89,12 +115,42 @@ class _CurvePainter extends CustomPainter {
             colors: colors,
           );
 
+    final secondProgressBarGradient = kIsWeb
+        ? LinearGradient(
+            tileMode: TileMode.mirror,
+            colors: secondColors,
+          )
+        : SweepGradient(
+            transform: rotation,
+            startAngle: degreeToRadians(secondGradientStartAngle),
+            endAngle: degreeToRadians(secondGradientEndAngle),
+            tileMode: TileMode.mirror,
+            colors: secondColors,
+          );
+
     final progressBarPaint = Paint()
       ..shader = progressBarGradient.createShader(progressBarRect)
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke
       ..strokeWidth = appearance.progressBarWidth;
-    drawCircularArc(canvas: canvas, size: size, paint: progressBarPaint);
+
+    final secondProgressBarPaint = Paint()
+      ..shader = secondProgressBarGradient.createShader(progressBarRect)
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = appearance.progressBarWidth;
+
+    drawCircularArc(
+        angle: angle,
+        canvas: canvas,
+        size: size,
+        paint: progressBarPaint);
+
+    drawCircularArc(
+        angle: secondAngle,
+        canvas: canvas,
+        size: size,
+        paint: secondProgressBarPaint);
 
     var dotPaint = Paint()..color = appearance.dotColor;
 
@@ -104,7 +160,8 @@ class _CurvePainter extends CustomPainter {
   }
 
   drawCircularArc(
-      {required Canvas canvas,
+      {required double angle,
+      required Canvas canvas,
       required Size size,
       required Paint paint,
       bool ignoreAngle = false,
@@ -136,7 +193,8 @@ class _CurvePainter extends CustomPainter {
       shadowPaint.strokeWidth = appearance.progressBarWidth + i * shadowStep;
       shadowPaint.color = appearance.shadowColor
           .withOpacity(maxOpacity - (opacityStep * (i - 1)));
-      drawCircularArc(canvas: canvas, size: size, paint: shadowPaint);
+      drawCircularArc(
+          angle: angle, canvas: canvas, size: size, paint: shadowPaint);
     }
   }
 

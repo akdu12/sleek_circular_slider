@@ -64,6 +64,10 @@ class CircularSliderAppearance {
     return null;
   }
 
+  List<Color>? get _customSecondProgressBarColors {
+    return [customColors!.secondProgressBarColor!, customColors!.secondProgressBarColor!];
+  }
+
   List<Color>? get _customTrackColors {
   	return customColors?.trackColors;
   }
@@ -83,6 +87,9 @@ class CircularSliderAppearance {
   List<Color>? get trackColors => _customTrackColors;
   List<Color> get progressBarColors =>
       _customProgressBarColors ?? _defaultBarColors;
+
+  List<Color> get secondProgressBarColors =>
+      _customSecondProgressBarColors ?? _defaultBarColors;
   double get gradientStartAngle =>
       _gradientStartAngle ?? _defaultGradientStartAngle;
   double get gradientStopAngle => _gradientEndAngle ?? _defaultGradientEndAngle;
@@ -160,6 +167,7 @@ class CustomSliderWidths {
 class CustomSliderColors {
   final Color? trackColor;
   final Color? progressBarColor;
+  final Color? secondProgressBarColor;
   final List<Color>? progressBarColors;
   final double? gradientStartAngle;
   final double? gradientEndAngle;
@@ -176,6 +184,7 @@ class CustomSliderColors {
   CustomSliderColors(
       {this.trackColor,
       this.progressBarColor,
+      this.secondProgressBarColor,
       this.progressBarColors,
       this.gradientStartAngle,
       this.gradientEndAngle,

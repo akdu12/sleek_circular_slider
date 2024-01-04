@@ -10,6 +10,7 @@ import 'slider_label.dart';
 import 'dart:math' as math;
 
 part 'curve_painter.dart';
+
 part 'custom_gesture_recognizer.dart';
 
 typedef void OnChange(double value);
@@ -17,6 +18,7 @@ typedef Widget InnerWidget(double percentage);
 
 class SleekCircularSlider extends StatefulWidget {
   final double initialValue;
+  final double secondValue;
   final double min;
   final double max;
   final CircularSliderAppearance appearance;
@@ -30,9 +32,14 @@ class SleekCircularSlider extends StatefulWidget {
     return valueToAngle(initialValue, min, max, appearance.angleRange);
   }
 
+  double get secondAngle {
+    return valueToAngle(secondValue, min, max, appearance.angleRange);
+  }
+
   const SleekCircularSlider(
       {Key? key,
       this.initialValue = 50,
+      this.secondValue = 20,
       this.min = 0,
       this.max = 100,
       this.appearance = defaultAppearance,
@@ -43,24 +50,28 @@ class SleekCircularSlider extends StatefulWidget {
       : assert(min <= max),
         assert(initialValue >= min && initialValue <= max),
         super(key: key);
+
   @override
   _SleekCircularSliderState createState() => _SleekCircularSliderState();
 }
 
 class _SleekCircularSliderState extends State<SleekCircularSlider>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   bool _isHandlerSelected = false;
   bool _animationInProgress = false;
   _CurvePainter? _painter;
   double? _oldWidgetAngle;
   double? _oldWidgetValue;
   double? _currentAngle;
+  double? _currentSecondAngle;
   late double _startAngle;
   late double _angleRange;
   double? _selectedAngle;
+  double? _selectedSecondAngle;
   double? _rotation;
   SpinAnimationManager? _spinManager;
   ValueChangedAnimationManager? _animationManager;
+  ValueChangedAnimationManager? _secondAnimationManager;
   late int _appearanceHashCode;
 
   bool get _interactionEnabled => (widget.onChangeEnd != null ||
@@ -78,6 +89,25 @@ class _SleekCircularSliderState extends State<SleekCircularSlider>
     }
 
     widget.appearance.spinnerMode ? _spin() : _animate();
+
+    _secondAnimationManager = ValueChangedAnimationManager(
+      tickerProvider: this,
+      minValue: widget.min,
+      maxValue: widget.max,
+      durationMultiplier: widget.appearance.animDurationMultiplier,
+    );
+    _secondAnimationManager!.animate(
+        initialValue:widget.secondValue,
+        angle: widget.secondAngle,
+        valueChangedAnimation: ((double anim, bool animationCompleted) {
+          setState(() {
+            if (!animationCompleted) {
+              _currentSecondAngle = anim;
+              // update painter and the on change closure
+              _setupPainter();
+            }
+          });
+        }));
   }
 
   @override
@@ -166,11 +196,13 @@ class _SleekCircularSliderState extends State<SleekCircularSlider>
   void dispose() {
     _spinManager?.dispose();
     _animationManager?.dispose();
+    _secondAnimationManager?.dispose();
     super.dispose();
   }
 
   void _setupPainter({bool counterClockwise = false}) {
     var defaultAngle = _currentAngle ?? widget.angle;
+    var defaultSecondAngle = _currentSecondAngle ?? widget.angle;
     if (_oldWidgetAngle != null) {
       if (_oldWidgetAngle != widget.angle) {
         _selectedAngle = null;
@@ -185,7 +217,15 @@ class _SleekCircularSliderState extends State<SleekCircularSlider>
         defaultAngle: defaultAngle,
         counterClockwise: counterClockwise);
 
+    _currentSecondAngle = calculateAngle(
+        startAngle: _startAngle,
+        angleRange: _angleRange,
+        selectedAngle: _selectedSecondAngle,
+        defaultAngle: defaultSecondAngle,
+        counterClockwise: counterClockwise);
+
     _painter = _CurvePainter(
+        secondAngle: _currentSecondAngle! < 0.5 ? 0.5 : _currentSecondAngle!,
         startAngle: _startAngle,
         angleRange: _angleRange,
         angle: _currentAngle! < 0.5 ? 0.5 : _currentAngle!,
