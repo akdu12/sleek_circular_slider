@@ -87,7 +87,6 @@ double calculateAngle(
       angleRange: angleRange,
       selectedAngle: selectedAngle,
       counterClockwise: counterClockwise);
-  print("floxing $calcAngle");
 
   if (calcAngle - angleRange > (360.0 - angleRange) * 0.5) {
     return 0.0;
