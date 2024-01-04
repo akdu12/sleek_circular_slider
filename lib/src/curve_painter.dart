@@ -141,10 +141,7 @@ class _CurvePainter extends CustomPainter {
       ..strokeWidth = appearance.progressBarWidth;
 
     drawCircularArc(
-        angle: angle,
-        canvas: canvas,
-        size: size,
-        paint: progressBarPaint);
+        angle: angle, canvas: canvas, size: size, paint: progressBarPaint);
 
     drawCircularArc(
         angle: secondAngle,
@@ -154,9 +151,42 @@ class _CurvePainter extends CustomPainter {
 
     var dotPaint = Paint()..color = appearance.dotColor;
 
+    final handlerGradient = kIsWeb
+        ? LinearGradient(
+            tileMode: TileMode.mirror,
+            colors: secondColors,
+          )
+        : SweepGradient(
+            transform: rotation,
+            startAngle: degreeToRadians(secondGradientStartAngle),
+            endAngle: degreeToRadians(secondGradientEndAngle),
+            tileMode: TileMode.mirror,
+            colors: [colors.first, secondColors.first],
+          );
     Offset handler = degreesToCoordinates(
         center!, -math.pi / 2 + startAngle + currentAngle + 1.5, radius);
-    canvas.drawCircle(handler, appearance.handlerSize, dotPaint);
+    canvas.drawCircle(
+        handler,
+        appearance.handlerSize,
+        dotPaint
+          ..shader = handlerGradient.createShader(handler &
+              Size(appearance.handlerSize * 2, appearance.handlerSize * 2)));
+    canvas.drawCircle(
+        handler,
+        appearance.handlerSize - 5,
+        dotPaint
+          ..shader = null
+          ..strokeWidth = 1.5
+          ..color = Colors.white.withOpacity(0.65)
+          ..style = PaintingStyle.stroke);
+    canvas.drawCircle(
+        handler,
+        appearance.handlerSize - 10,
+        dotPaint
+          ..shader = null
+          ..strokeWidth = 1.5
+          ..color = Colors.white.withOpacity(0.65)
+          ..style = PaintingStyle.stroke);
   }
 
   drawCircularArc(
